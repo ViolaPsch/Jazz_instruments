@@ -137,94 +137,17 @@ data <- data %>%
         "vibes",
         "bowed vibes",
         "tenor vibes"
+      ),
+      violin = c(
+        
       )
     )
   )
 
-keys <- c( # the instruments you want to replace
-  "soprano sax",
-  "alto sax",
-  "tenor sax",
-  "baritone sax",
-  "bass sax",
-  "voices",
-  "vocals",
-  "classical guitar",
-  "electric guitar",
-  "10-string guitar",
-  "acoustic guitar",
-  "12-string guitar",                          
-  "electric 12-string guitar",
-  "6-string guitar",
-  "6-string electric guitar",
-  "8-string guitar",
-  "10-string guitar",
-  "6 & 12-string guitar",
-  "10 & 14-string guitar",
-  "electric 6 & 12-string guitar",
-  "super 8-string guitar",
-  "electric and acoustic 6 & 12-string guitar",
-  "electronic guitar",
-  "Spanish classical guitar",
-  "pedal steel guitar",
-  "baritone guitar",
-  "flamenco guitar",
-  "slide guitar",
-  "guitars",
-  "alto flute",
-  "bass flute",
-  "alto C flute",
-  "C bass flute",
-  "contrabass flute",
-  "Baroque flute",
-  "tenor horn",
-  "flugelhorn",
-  "baritone horn",
-  "bass clarinet",
-  "bowed vibes",
-  "tenor vibes",
-  "live electronics",
-  "electric bass",
-  "double bass",
-  "English horn"
-)
-
-vals <- c( # the replacement values
-  "sax",
-  "sax",
-  "sax",
-  "sax",
-  "sax",
-  "voice",
-  "voice",
-  rep("guitar", 22),
-  rep("flute", 6),
-  "French horn",
-  "French horn",
-  "French horn",
-  "clarinet",
-  "vibes",
-  "vibes",
-  "electronics",
-  "bass guitar",
-  "contrabass",
-  "oboe"
-)
-
-keysvals <- setNames(vals, keys) # create named vector
-data.frame(vals, keys)
 
 data %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
-
-data <- data %>% 
-  mutate(
-    musician_instruments = recode(
-      musician_instruments,
-      !!!keysvals
-    )
-)
 ```
 
 
