@@ -1,0 +1,269 @@
+---
+title: "Jazz recordings"
+author: "VP"
+date: "6 1 2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(tidyverse)
+
+knitr::opts_chunk$set(echo = FALSE)
+
+my_theme <- theme(
+  panel.grid       = element_blank(),
+  axis.line        = element_blank(),
+  panel.background = element_rect(fill  = "white", colour = NA),
+  axis.title.x     = element_text(
+                       size = 12, 
+                       vjust = -1
+                     ),
+  axis.title.y     = element_text(size = 12)
+)
+```
+
+```{r data import and data preparation}
+data <- read.csv("data/ECM_releases.csv", encoding = "UTF-8")
+
+str_which(data$release_year, "\\?")
+data$release_year <- as.numeric(str_remove(data$release_year, "\\?"))
+
+data <- data %>% 
+  drop_na(musician_name)
+```
+
+
+```{r recode instruments}
+# https://stackoverflow.com/questions/57000390/how-to-recode-multiple-values-in-vector-into-one-value
+unique(data$musician_instruments[
+  str_detect(data$musician_instruments, "[A-Z]") & 
+  !is.na(data$musician_instruments)
+])
+
+unique(data$musician_instruments[
+  str_detect(data$musician_instruments, "guitar") & 
+  !is.na(data$musician_instruments)
+])
+
+data[str_detect(data$musician_instruments, "flute") & 
+  !is.na(data$musician_instruments),] %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE)
+
+data[str_detect(data$musician_instruments, "horn") & 
+  !is.na(data$musician_instruments),] %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE)
+
+data[str_detect(data$musician_instruments, "bass") & 
+  !is.na(data$musician_instruments),] %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE)
+
+data[str_detect(data$musician_instruments, "violin") & 
+  !is.na(data$musician_instruments),] %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE)
+
+unique(data$musician_instruments)
+
+data <- data %>% 
+  mutate(
+    musician_instruments = fct_recode(
+      musician_instruments,
+        electronics = "live electronics",
+        clarinet    = "bass clarinet",
+        contrabass  = "double bass",
+        oboe        = "English horn"
+    ),
+    musician_instruments = fct_collapse(
+      musician_instruments,
+      sax = c(
+        "sax",
+        "soprano sax",
+        "alto sax",
+        "tenor sax",
+        "baritone sax",
+        "bass sax"
+      ),
+      voice = c(
+        "voice",
+        "voices",
+        "vocals"
+      ),
+      guitar = c(
+        "guitar",
+        "classical guitar",
+        "electric guitar",
+        "10-string guitar",
+        "acoustic guitar",
+        "12-string guitar",                          
+        "electric 12-string guitar",
+        "6-string guitar",
+        "6-string electric guitar",
+        "8-string guitar",
+        "10-string guitar",
+        "6 & 12-string guitar",
+        "10 & 14-string guitar",
+        "electric 6 & 12-string guitar",
+        "super 8-string guitar",
+        "electric and acoustic 6 & 12-string guitar",
+        "electronic guitar",
+        "Spanish classical guitar",
+        "pedal steel guitar",
+        "baritone guitar",
+        "flamenco guitar",
+        "slide guitar",
+        "guitars"
+      ),
+      flute = c(
+        "flute",
+        "alto flute",
+        "bass flute",
+        "alto C flute",
+        "C bass flute",
+        "contrabass flute",
+        "Baroque flute",
+        "Vermont \"folk\" alto flute"
+      ),
+      "French horn" = c(
+        "French horn",
+        "tenor horn",
+        "flugelhorn",
+        "baritone horn"
+      ),
+      vibes = c(
+        "vibes",
+        "bowed vibes",
+        "tenor vibes"
+      )
+    )
+  )
+
+keys <- c( # the instruments you want to replace
+  "soprano sax",
+  "alto sax",
+  "tenor sax",
+  "baritone sax",
+  "bass sax",
+  "voices",
+  "vocals",
+  "classical guitar",
+  "electric guitar",
+  "10-string guitar",
+  "acoustic guitar",
+  "12-string guitar",                          
+  "electric 12-string guitar",
+  "6-string guitar",
+  "6-string electric guitar",
+  "8-string guitar",
+  "10-string guitar",
+  "6 & 12-string guitar",
+  "10 & 14-string guitar",
+  "electric 6 & 12-string guitar",
+  "super 8-string guitar",
+  "electric and acoustic 6 & 12-string guitar",
+  "electronic guitar",
+  "Spanish classical guitar",
+  "pedal steel guitar",
+  "baritone guitar",
+  "flamenco guitar",
+  "slide guitar",
+  "guitars",
+  "alto flute",
+  "bass flute",
+  "alto C flute",
+  "C bass flute",
+  "contrabass flute",
+  "Baroque flute",
+  "tenor horn",
+  "flugelhorn",
+  "baritone horn",
+  "bass clarinet",
+  "bowed vibes",
+  "tenor vibes",
+  "live electronics",
+  "electric bass",
+  "double bass",
+  "English horn"
+)
+
+vals <- c( # the replacement values
+  "sax",
+  "sax",
+  "sax",
+  "sax",
+  "sax",
+  "voice",
+  "voice",
+  rep("guitar", 22),
+  rep("flute", 6),
+  "French horn",
+  "French horn",
+  "French horn",
+  "clarinet",
+  "vibes",
+  "vibes",
+  "electronics",
+  "bass guitar",
+  "contrabass",
+  "oboe"
+)
+
+keysvals <- setNames(vals, keys) # create named vector
+data.frame(vals, keys)
+
+data %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE)
+
+data <- data %>% 
+  mutate(
+    musician_instruments = recode(
+      musician_instruments,
+      !!!keysvals
+    )
+)
+```
+
+
+```{r most frequet instruments}
+most_frequent_instruments <- data %>% 
+  filter(!(musician_instruments %in% c( 
+    "soprano", # exclude singing because instrument and voice labels are ambiguous
+    "alto",    # (e.g. "tenor": "tenor voice" or "tenor sax"?)
+    "tenor",
+    "baritone",
+    "bass",
+    "composer",
+    "conductor",
+    "music",
+    "countertenor",
+    "text"
+  ))) %>% 
+  group_by(musician_instruments) %>% 
+  count(sort = TRUE) %>% 
+  filter(n >= 24) %>% 
+  select(musician_instruments)
+
+data <- data %>% 
+  filter(musician_instruments %in% most_frequent_instruments$musician_instruments) %>% 
+  mutate(musician_instruments = as.factor(musician_instruments))
+```
+
+```{r include only unique combinations}
+data <- data[!duplicated(data[, c("release_num", "release_name", "release_year", "musician_name")]), ]
+```
+
+```{r plot}
+data %>% 
+  ggplot( 
+    aes(
+      x = release_year,
+      color = musician_instruments
+    )) +
+  geom_density(alpha = .2) +
+  my_theme
+```
+
