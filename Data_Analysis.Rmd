@@ -10,7 +10,7 @@ library(ggplot2)
 library(tidyverse)
 library(RColorBrewer)
 
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 
 my_theme <- theme(
   panel.grid       = element_blank(),
@@ -23,10 +23,9 @@ my_theme <- theme(
 )
 ```
 
-```{r data import and data preparation}
+```{r data import and data preparation, include=FALSE}
 data <- read.csv("data/ECM_releases.csv", encoding = "UTF-8")
 
-str_which(data$release_year, "\\?")
 data$release_year <- as.integer(str_remove(data$release_year, "\\?"))
 
 data <- data %>% 
@@ -34,7 +33,7 @@ data <- data %>%
 ```
 
 
-```{r search instruments}
+```{r search instruments, include=FALSE}
 # https://stackoverflow.com/questions/57000390/how-to-recode-multiple-values-in-vector-into-one-value
 unique(data$musician_instruments[
   str_detect(data$musician_instruments, "[A-Z]") & 
@@ -98,7 +97,7 @@ unique(data$musician_instruments)
 ```
 
 
-```{r recode instruments}
+```{r recode instruments, warning=FALSE}
 data <- data %>% 
   mutate(
     musician_instruments = fct_recode(
@@ -399,7 +398,8 @@ data <- data %>%
 
 data %>% 
   group_by(musician_instruments) %>% 
-  count(sort = TRUE)
+  count(sort = TRUE) %>% 
+  slice_max(n, n = 30)
 ```
 
 ```{r collapse instrument groups}
@@ -486,7 +486,8 @@ data <- data %>%
 
 data %>% 
   group_by(musician_instruments) %>% 
-  count(sort = TRUE)
+  count(sort = TRUE) %>% 
+  slice_max(n, n = 30)
 ```
 
 
@@ -534,43 +535,15 @@ data %>%
   group_by(release_year, release_decade) %>% 
   count()
 
-table(data$release_year, data$release_decade)
+# table(data$release_year, data$release_decade)
 
 sum(is.na(data$release_decade))
 
 data <- data %>% 
   drop_na(release_decade)
   
-  
-
-display.brewer.pal(9, "Oranges")
 group.colors.5 <- brewer.pal(9, "Oranges")[3:7]
 names(group.colors.5) <- unique(data$release_decade)
-```
-
-```{r density plot}
-data %>% 
-  ggplot( 
-    aes(
-      x = release_year,
-      color = musician_instruments,
-      fill = musician_instruments
-    )) +
-  geom_density(alpha = .1) +
-  my_theme
-```
-```{r scatter plot}
-data %>% 
-  group_by(musician_instruments, release_year) %>% 
-  count(sort = TRUE) %>% 
-  ggplot( 
-    aes(
-      x = release_year,
-      y = n,
-      color = musician_instruments
-    )) +
-  geom_point(alpha = .5, shape = 19) +
-  my_theme
 ```
 
 ```{r hist}
@@ -594,18 +567,6 @@ data %>%
   geom_bar(alpha = .5, binwidth = 5) +
   my_theme
 ```
-```{r dotplot}
-data %>% 
-  group_by(musician_instruments, release_year) %>%
-  ggplot( 
-    aes(
-      x     = release_year,
-      color = musician_instruments,
-      fill  = musician_instruments
-    )) +
-  geom_dotplot(alpha = .5, position = "stack") +
-  my_theme
-```
 
 ```{r fill hist}
 data %>% 
@@ -618,6 +579,7 @@ data %>%
   geom_histogram(alpha = .5, position = "fill") +
   my_theme
 ```
+
 ```{r flipped plot}
 table(data$musician_instruments, data$release_decade)
 
@@ -646,10 +608,6 @@ data %>%
 ```
 
 ```{r flipped plot 2}
-table(data$release_decade, data$musician_instruments)
-
-display.brewer.pal(18, "Oranges")
-display.brewer.pal(7, "Oranges")
 group.colors.7 <- brewer.pal(7, "Oranges")
 
 group.colors.8 <- c(brewer.pal(19, "Oranges")[1], group.colors.7)
@@ -666,6 +624,8 @@ plot_data2 <- data %>%
   select(musician_instruments, n, release_decade) %>% 
   arrange(desc(n)) %>% 
   ungroup()
+
+table(plot_data2$release_decade, plot_data2$musician_instruments)
 
 plot_data2 %>% 
   ggplot( 
