@@ -123,7 +123,8 @@ data <- data %>%
         "acoustic cello", 
         "8-string solid body electric cello"
       ), 
-      piano = c(
+      Klavier = c(
+        "piano",
         "prepared piano",
         "electric piano",
         "toy piano",
@@ -139,7 +140,8 @@ data <- data %>%
         "Steinway piano",
         "tangent piano" 
       ),
-      sax = c(
+      Saxophon = c(
+        "sax",
         "soprano sax",
         "alto sax",
         "tenor sax",
@@ -169,12 +171,14 @@ data <- data %>%
         "electric double bass",
         "string bass"
       ),
-      voice = c(
-        "voices",
+      Gesang = c(
         "vocals",
-        "backing vocals"
+        "backing vocals",
+        "voices",
+        "voice"
       ),
-      guitar = c(
+      Gitarren = c(
+        "guitar",
         "classical guitar",
         "electric guitar",
         "10-string guitar",
@@ -224,8 +228,8 @@ data <- data %>%
         "6 & 4-string bass",
         "F bass"
       ),
-      flute = c(
-        flute,
+      "Flöten" = c(
+        "flute",
         "bass recorder",
         "recorder",
         "great bass recorder",
@@ -365,8 +369,9 @@ data <- data %>%
   mutate(
     musician_instruments = fct_collapse(
       musician_instruments,
-      percussion = c(
+      Schlaginstrumente = c(
         perc, 
+        "percussion",
         "drums",
         "bells",
         "timpani",
@@ -402,7 +407,8 @@ data <- data %>%
   mutate(
     musician_instruments = fct_collapse(
       musician_instruments,
-      strings = c(
+        Saiteninstrumente = c(
+        "strings",
         "baritone violin",			
         "bass violin",			
         "contrabass",
@@ -429,7 +435,8 @@ data <- data %>%
         "kamancheh",
         "koto"
       ),
-      brass = c(
+      Blechblasinstrumente = c(
+        "brass",
         "trombone",
         "trumpet",
         "tuba",
@@ -440,7 +447,8 @@ data <- data %>%
         "bike horns",
         "cornet"
       ),
-      "other woodwind" = c(
+      "Andere Holzblasinstrumente" = c(
+        "other woodwind",
         "woodwinds",
         "bassoon",
         "clarinet",
@@ -460,11 +468,10 @@ data <- data %>%
         "Swedish bagpipes",
         "whirlpipe"
       ),
-      electronics = c(
-        "synthesizer"
-      ),
-      guitar = c("bass guitar"),
-      "keyboard instruments" = c(
+      "Elektronische Instrumente" = c("electronics", "synthesizer"),
+      Gitarren = c("bass guitar", "guitar"),
+      Tasteninstrumente = c(
+        "keyboard instruments",
         "organ",
         "accordion",
         "keyboards",
@@ -533,10 +540,12 @@ sum(is.na(data$release_decade))
 
 data <- data %>% 
   drop_na(release_decade)
+  
+  
 
-display.brewer.pal(9, "Oranges")[3:7]
-group.colors <- brewer.pal(9, "Oranges")[3:7]
-names(group.colors) <- unique(data$release_decade)
+display.brewer.pal(9, "Oranges")
+group.colors.5 <- brewer.pal(9, "Oranges")[3:7]
+names(group.colors.5) <- unique(data$release_decade)
 ```
 
 ```{r density plot}
@@ -612,9 +621,15 @@ data %>%
 ```{r flipped plot}
 table(data$musician_instruments, data$release_decade)
 
-data %>% 
+data %>%
+  mutate(musician_instruments = musician_instruments %>% 
+    fct_lump_n(7) %>% 
+    fct_infreq()
+  ) %>% 
+  filter(musician_instruments != "Other") %>% 
   group_by(musician_instruments) %>% 
-  mutate(n = n(), release_decade = fct_rev(release_decade)) %>% 
+  mutate(n = n(), release_decade = release_decade) %>% 
+  select(musician_instruments, n, release_decade) %>% 
   arrange(desc(n)) %>% 
   ungroup() %>% 
   ggplot( 
@@ -624,9 +639,58 @@ data %>%
     )) +
   geom_bar(binwidth = 5) +
   labs(x = "Instrumente", y = "Anzahl", title = "Intrumente", fill = "Jahrzehnt") +
-  scale_fill_manual(values = group.colors) +
+  scale_fill_manual(values = group.colors.5) +
   geom_text(aes(label = n, y = n + 40)) +
   coord_flip() +
+  my_theme
+```
+
+```{r flipped plot 2}
+table(data$release_decade, data$musician_instruments)
+
+display.brewer.pal(18, "Oranges")
+display.brewer.pal(7, "Oranges")
+group.colors.7 <- brewer.pal(7, "Oranges")
+
+group.colors.8 <- c(brewer.pal(19, "Oranges")[1], group.colors.7)
+# names(group.colors.7) <- table(data$musician_instruments)
+
+plot_data2 <- data %>%
+  mutate(musician_instruments = musician_instruments %>%
+    fct_infreq() %>% 
+    fct_lump_n(7) %>% 
+    fct_rev()
+  ) %>% 
+  group_by(release_decade) %>% 
+  mutate(n = n()) %>% 
+  select(musician_instruments, n, release_decade) %>% 
+  arrange(desc(n)) %>% 
+  ungroup()
+
+plot_data2 %>% 
+  ggplot( 
+    aes(
+      x    = release_decade,
+      fill = musician_instruments
+    )) +
+  geom_bar(binwidth = 5) +
+  labs(x = "", y = "", fill = "") +
+  scale_fill_manual(values = group.colors.8) +
+  geom_text(aes(label = n, y = n + 40)) +
+  my_theme
+
+plot_data2 %>% 
+  ggplot( 
+    aes(
+      x    = release_decade,
+      color = musician_instruments#,
+      # group = musician_instruments
+    )
+  ) +
+  geom_bar(binwidth = 5, fill = "white") +
+  labs(x = "", y = "", color = "") +
+  scale_fill_manual("white") +
+  geom_text(aes(label = n, y = n + 40)) +
   my_theme
 ```
 
