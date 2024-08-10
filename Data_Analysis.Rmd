@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(ggplot2)
-library(tidyverse)
+library(dplyr)
 library(RColorBrewer)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -26,69 +26,69 @@ my_theme <- theme(
 ```{r data import and data preparation, include=FALSE}
 data <- read.csv("data/ECM_releases.csv", encoding = "UTF-8")
 
-data$release_year <- as.integer(str_remove(data$release_year, "\\?"))
+data$release_year <- as.integer(stringr::str_remove(data$release_year, "\\?"))
 
 data <- data %>% 
-  drop_na(musician_name)
+  tidyr::drop_na(musician_name)
 ```
 
 
 ```{r search instruments, include=FALSE}
 # https://stackoverflow.com/questions/57000390/how-to-recode-multiple-values-in-vector-into-one-value
 unique(data$musician_instruments[
-  str_detect(data$musician_instruments, "[A-Z]") & 
+  stringr::str_detect(data$musician_instruments, "[A-Z]") & 
   !is.na(data$musician_instruments)
 ])
 
 unique(data$musician_instruments[
-  str_detect(data$musician_instruments, "guitar") & 
+  stringr::str_detect(data$musician_instruments, "guitar") & 
   !is.na(data$musician_instruments)
 ])
 
-data[str_detect(data$musician_instruments, "flute") & 
+data[stringr::str_detect(data$musician_instruments, "flute") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
 
-data[str_detect(data$musician_instruments, "horn") & 
+data[stringr::str_detect(data$musician_instruments, "horn") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
 
-data[str_detect(as.character(data$musician_instruments), "bass") & 
+data[stringr::str_detect(as.character(data$musician_instruments), "bass") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
 
-data[str_detect(as.character(data$musician_instruments), "harp") & 
+data[stringr::str_detect(as.character(data$musician_instruments), "harp") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
 
-data[str_detect(as.character(data$musician_instruments), "ion") & 
+data[stringr::str_detect(as.character(data$musician_instruments), "ion") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
 
-data[str_detect(as.character(data$musician_instruments), "piano") & 
+data[stringr::str_detect(as.character(data$musician_instruments), "piano") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE) %>% 
   pull(musician_instruments)
 
-drum <- data[str_detect(as.character(data$musician_instruments), "drum") & 
+drum <- data[stringr::str_detect(as.character(data$musician_instruments), "drum") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE) %>% 
   pull(musician_instruments)
 
-flute <- data[str_detect(as.character(data$musician_instruments), "flute") & 
+flute <- data[stringr::str_detect(as.character(data$musician_instruments), "flute") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE) %>% 
   pull(musician_instruments)
 
-data[str_detect(data$musician_instruments, "violin") & 
+data[stringr::str_detect(data$musician_instruments, "violin") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE)
@@ -100,12 +100,12 @@ unique(data$musician_instruments)
 ```{r recode instruments, warning=FALSE}
 data <- data %>% 
   mutate(
-    musician_instruments = fct_recode(
+    musician_instruments = forcats::fct_recode(
       musician_instruments,
       oboe        = "English horn",
       viola       = "alto violin"
     ),
-    musician_instruments = fct_collapse(
+    musician_instruments = forcats::fct_collapse(
       musician_instruments,
       synthesizer = c("guitar synthesizer", "ARP 2600 synthesizer"),
       trombone    = c("bass trombone", "contrabass trombone"),
@@ -357,7 +357,7 @@ data <- data %>%
     "wind and perciussion orchestra"
   )))
 
-perc <- data[str_detect(data$musician_instruments, "perc") & 
+perc <- data[stringr::str_detect(data$musician_instruments, "perc") & 
   !is.na(data$musician_instruments),] %>% 
   group_by(musician_instruments) %>% 
   count(sort = TRUE) %>% 
@@ -366,7 +366,7 @@ perc <- data[str_detect(data$musician_instruments, "perc") &
 
 data <- data %>% 
   mutate(
-    musician_instruments = fct_collapse(
+    musician_instruments = forcats::fct_collapse(
       musician_instruments,
       Schlaginstrumente = c(
         perc, 
@@ -405,7 +405,7 @@ data %>%
 ```{r collapse instrument groups}
 data <- data %>% 
   mutate(
-    musician_instruments = fct_collapse(
+    musician_instruments = forcats::fct_collapse(
       musician_instruments,
         Saiteninstrumente = c(
         "strings",
@@ -540,7 +540,7 @@ data %>%
 sum(is.na(data$release_decade))
 
 data <- data %>% 
-  drop_na(release_decade)
+  tidyr::drop_na(release_decade)
   
 group.colors.5 <- brewer.pal(9, "Oranges")[3:7]
 names(group.colors.5) <- unique(data$release_decade)
@@ -585,8 +585,8 @@ table(data$musician_instruments, data$release_decade)
 
 data %>%
   mutate(musician_instruments = musician_instruments %>% 
-    fct_lump_n(7) %>% 
-    fct_infreq()
+    forcats::fct_lump_n(7) %>% 
+    forcats::fct_infreq()
   ) %>% 
   filter(musician_instruments != "Other") %>% 
   group_by(musician_instruments) %>% 
@@ -596,7 +596,7 @@ data %>%
   ungroup() %>% 
   ggplot( 
     aes(
-      x     = fct_reorder(musician_instruments, n),
+      x     = forcats::fct_reorder(musician_instruments, n),
       fill  = release_decade
     )) +
   geom_bar(binwidth = 5) +
@@ -615,9 +615,9 @@ group.colors.8 <- c(brewer.pal(19, "Oranges")[1], group.colors.7)
 
 plot_data2 <- data %>%
   mutate(musician_instruments = musician_instruments %>%
-    fct_infreq() %>% 
-    fct_lump_n(7) %>% 
-    fct_rev()
+    forcats::fct_infreq() %>% 
+    forcats::fct_lump_n(7) %>% 
+    forcats::fct_rev()
   ) %>% 
   group_by(release_decade) %>% 
   mutate(n = n()) %>% 
